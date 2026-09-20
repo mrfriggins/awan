@@ -101,6 +101,8 @@ class Repository:
 
     def save_evidence(self, operation_id: str, ev) -> None:
         with self.db.session() as s:
+            if s.get(EvidenceRow, ev.id) is not None:
+                return  # deduped evidence already persisted
             s.add(EvidenceRow(
                 id=ev.id, operation_id=operation_id, step_id=ev.step_id,
                 target=ev.target, kind=ev.kind, summary=ev.summary,

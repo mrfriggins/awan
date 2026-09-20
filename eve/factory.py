@@ -18,6 +18,7 @@ from .persistence.tables import TargetAuthorizationRow
 from .sentinel.mira import EmergencyStop, MiraSentinel
 from .tools.registry import ToolRegistry
 from .tools.simulator.adapters import register_simulator
+from .tools.live.adapters import register_live
 
 
 class Engine:
@@ -32,6 +33,10 @@ class Engine:
         self.repo = Repository(self.db)
         self.registry = ToolRegistry()
         register_simulator(self.registry)
+        # Live (online) adapters are always registered so plans validate and the
+        # tool inventory is visible; they refuse to act unless EVE_ALLOW_LIVE is
+        # set, and every live target still needs an explicit authorization grant.
+        register_live(self.registry)
         for spec in self.registry.list_specs():
             self.repo.upsert_tool(spec.tool_id, spec.version, spec.name,
                                   spec.to_dict(), spec.available)

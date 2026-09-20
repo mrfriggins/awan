@@ -91,4 +91,6 @@ def test_emergency_stop_over_http(client):
 
 def test_tools_listing(client):
     tools = client.get("/api/tools", headers=OP).json()["tools"]
-    assert len(tools) == 4
+    ids = {t["tool_id"] for t in tools}
+    assert {"sim.recon", "sim.enum", "sim.vuln", "sim.validate"} <= ids
+    assert {"net.recon", "net.enum", "net.vuln", "net.validate"} <= ids

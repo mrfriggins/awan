@@ -11,6 +11,14 @@ class CreateOperationRequest(BaseModel):
     targets: List[str] = Field(min_length=1)
     phases: Optional[List[str]] = None
     require_approval: bool = False
+    mode: str = "sim"  # "sim" (offline) or "live" (authorized online recon)
+
+    @field_validator("mode")
+    @classmethod
+    def _mode(cls, v: str) -> str:
+        if v not in ("sim", "live"):
+            raise ValueError("mode must be 'sim' or 'live'")
+        return v
 
     @field_validator("targets")
     @classmethod

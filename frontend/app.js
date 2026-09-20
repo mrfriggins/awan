@@ -39,10 +39,11 @@ $("create").onclick = async () => {
   const goal = $("goal").value.trim();
   const targets = $("targets").value.split(",").map(t => t.trim()).filter(Boolean);
   const require_approval = $("require-approval").checked;
+  const mode = $("mode").value;
   $("create").disabled = true;
   try {
     const op = await api("/api/operations", { method: "POST",
-      body: JSON.stringify({ goal, targets, require_approval }) });
+      body: JSON.stringify({ goal, targets, require_approval, mode }) });
     await refreshOps();
     selectOp(op.id);
   } catch (e) { alert("Create failed: " + e.message); }

@@ -38,6 +38,11 @@
         <textarea id="goal" placeholder="Run a full assessment of the lab web host">Run a full assessment of the lab web host</textarea>
         <label for="targets">Authorized targets (comma-separated)</label>
         <input id="targets" value="lab-web-01" />
+        <label for="mode">Mode</label>
+        <select id="mode">
+          <option value="sim">Simulator (offline lab fixtures)</option>
+          <option value="live">Live (authorized online recon — needs EVE_ALLOW_LIVE)</option>
+        </select>
         <div class="checkbox">
           <input type="checkbox" id="require-approval" />
           <label for="require-approval" style="margin:0">Require human approval before execution</label>

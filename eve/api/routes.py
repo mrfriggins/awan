@@ -56,7 +56,8 @@ def create_operation(body: CreateOperationRequest, engine=Depends(get_engine),
     try:
         snap = engine.controller.create_operation(
             actor=actor.id, goal=body.goal, targets=body.targets,
-            phases=body.phases, require_approval=body.require_approval)
+            phases=body.phases, require_approval=body.require_approval,
+            mode=body.mode)
     except (EveError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     if engine.settings.autorun and snap.state.value == "QUEUED":

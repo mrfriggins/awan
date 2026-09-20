@@ -82,14 +82,16 @@ class EveExecutionController:
         self.scheduler = ExecutionScheduler()
         self._runtime: Dict[str, _Runtime] = {}
         self._lock = threading.RLock()
+        self.live_transport = None  # optional httpx transport for tests
 
     # ------------------------------------------------------------------ API
     def create_operation(self, *, actor: str, goal: str, targets: List[str],
                          phases: Optional[List[str]] = None,
                          require_approval: bool = False,
+                         mode: str = "sim",
                          request_id: Optional[str] = None) -> OperationSnapshot:
         rid = request_id or new_req_id()
-        intent = self.interpreter.interpret(goal, targets, phases)
+        intent = self.interpreter.interpret(goal, targets, phases, mode=mode)
         now = self.clock.now()
         snap = OperationSnapshot(
             id=new_op_id(), request_id=rid, goal=goal, actor=actor,
@@ -107,6 +109,12 @@ class EveExecutionController:
                           {"actor": actor, "targets": targets,
                            "phases": [p.value for p in intent.phases]})
         self._to(rt, OperationState.VALIDATING)
+
+        if intent.mode == "live":
+            from .tools.live.client import live_enabled
+            if not live_enabled():
+                self._fail(rt, "live networking disabled (set EVE_ALLOW_LIVE=true)")
+                return snap
 
         decision = self.gateway.authorize_operation(
             actor, targets, [p.value for p in intent.phases])
@@ -338,6 +346,8 @@ class EveExecutionController:
             return
 
         params = dict(step.params)
+        if "network" in caps and self.live_transport is not None:
+            params["_transport"] = self.live_transport
         if step.action == "vuln_analysis":
             params["_evidence"] = [e.model_dump() for e in
                                    rt.evidence.for_target(step.target)]

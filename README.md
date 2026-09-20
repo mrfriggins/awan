@@ -66,6 +66,38 @@ curl -s $BASE/api/operations/<op_id>/report -H "$OP"
 curl -s $BASE/api/operations/<op_id>/audit -H "$OP"
 ```
 
+## Live (online) mode
+
+By default EVE runs the **offline simulator**. To run **authorized, non-destructive
+online reconnaissance** against real targets:
+
+```bash
+export EVE_ALLOW_LIVE=true            # opt in (off by default)
+# For internal/lab hosts that resolve to private IPs, also:
+# export EVE_LIVE_ALLOW_PRIVATE=true
+# Optional belt-and-suspenders allowlist:
+# export EVE_LIVE_ALLOWED_HOSTS="scanme.example,lab.internal"
+python -m eve
+```
+
+Then create an operation with `"mode": "live"` and a real target you are
+authorized to assess:
+
+```bash
+curl -s -X POST $BASE/api/authorizations -H "$OP" -H 'Content-Type: application/json' \
+  -d '{"actor":"operator","target":"scanme.example"}'
+curl -s -X POST $BASE/api/operations -H "$OP" -H 'Content-Type: application/json' \
+  -d '{"goal":"full assessment","targets":["scanme.example"],"mode":"live"}'
+```
+
+**Live mode is read-only recon:** DNS resolution, HTTP(S) `GET`/`HEAD`, header and
+`robots.txt`/`security.txt` retrieval, security-header + TLS-certificate
+inspection, and version-banner analysis. It does **not** scan ports, fuzz,
+exploit, or attempt authentication — and it never contacts a target without an
+explicit authorization grant. Requests that resolve to loopback/private/
+link-local/cloud-metadata addresses are refused unless `EVE_LIVE_ALLOW_PRIVATE`
+is set. See [`docs/SECURITY.md`](docs/SECURITY.md).
+
 ## Run with Postgres + Redis
 
 ```bash
@@ -79,7 +111,7 @@ before exposing it anywhere.
 
 ```bash
 pip install -r requirements.txt
-python -m pytest            # 61 tests, no external services required
+python -m pytest            # 70 tests, no external services required
 ```
 
 ## Documentation
@@ -98,6 +130,10 @@ python -m pytest            # 61 tests, no external services required
 | `EVE_SENTINEL_FAIL_CLOSED` | `true` | Deny when the sentinel is unavailable |
 | `EVE_AUTORUN` | `true` | Auto-run a queued operation in the background |
 | `EVE_ACTORS` | dev tokens | `token:actor:role1\|role2,...` |
+| `EVE_ALLOW_LIVE` | `false` | Enable **live/online** recon adapters |
+| `EVE_LIVE_ALLOW_PRIVATE` | `false` | Permit private/internal IPs (internal labs) |
+| `EVE_LIVE_ALLOWED_HOSTS` | _(unset)_ | Comma-separated host allowlist for live mode |
+| `EVE_LIVE_TIMEOUT` / `EVE_LIVE_MAX_BYTES` | `10` / `262144` | Per-request bounds |
 | `EVE_MAX_STEPS` | `64` | Loop bound: max steps |
 | `EVE_MAX_RETRIES` | `2` | Loop bound: retries per step |
 | `EVE_MAX_DURATION_SECONDS` | `900` | Loop bound: wall-clock |

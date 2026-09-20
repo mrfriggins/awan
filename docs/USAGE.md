@@ -33,6 +33,15 @@
   `/api/emergency-stop/reset` re-enables execution. The console's red button
   does this.
 
+## Live (online) mode
+
+Set `EVE_ALLOW_LIVE=true` and create operations with `"mode":"live"` to run
+authorized, **non-destructive** online recon (DNS, HTTP(S) GET/HEAD, headers,
+robots/security.txt, TLS + security-header inspection, banner version analysis)
+against targets you have authorized. See the live-mode section of the top-level
+README and `docs/SECURITY.md` for the guardrails (SSRF protection, allowlist,
+request bounds). The console has a Sim/Live selector on the New-operation card.
+
 ## The offline lab
 
 Fixtures live in `eve/tools/simulator/fixtures.py`:
@@ -64,10 +73,10 @@ See the table in the top-level `README.md`. Production deployments **must** set
 
 ## Tests
 
-`python -m pytest` runs 61 tests with no external services (sqlite + in-memory
+`python -m pytest` runs 70 tests with no external services (sqlite + in-memory
 bus + a frozen clock). Coverage spans planning/validation, dependency
 graph/cycles, tool registry, authorization/expiry/scope, approvals, sentinel
 denial + outage (fail-closed), emergency stop, retries, adapter failure/crash,
 loop budgets, cancellation, pause/resume, adaptive replanning, state
-persistence/restart, audit integrity + tamper detection, and the HTTP API
-(authn/authz + end-to-end).
+persistence/restart, audit integrity + tamper detection, live-mode guardrails +
+a mocked online end-to-end run, and the HTTP API (authn/authz + end-to-end).

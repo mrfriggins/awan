@@ -36,6 +36,29 @@ guards by registering them.
 - All log and audit payloads pass through `redact()`, which strips
   credential/token/secret-shaped keys and values.
 
+## Live (online) mode boundaries
+
+When `EVE_ALLOW_LIVE=true`, the `net.*` adapters may contact real targets, but
+only within these structural limits:
+
+- **Read-only recon only.** GET/HEAD, headers, `robots.txt`/`security.txt`, TLS
+  certificate + security-header inspection, DNS lookup. No port scanning, no
+  fuzzing, no exploitation, no credential/auth attempts.
+- **Authorization still required.** A live target must have an explicit,
+  unexpired scope grant; the deterministic gateway checks it every step.
+- **SSRF protection.** Hosts resolving to loopback/private/link-local/reserved/
+  cloud-metadata addresses are refused unless `EVE_LIVE_ALLOW_PRIVATE=true`
+  (for internal authorized labs). An optional `EVE_LIVE_ALLOWED_HOSTS`
+  allowlist further constrains reachable hosts.
+- **Bounded requests.** http/https only, GET/HEAD only, capped redirects,
+  response-size cap, short timeout, no auth headers sent.
+- **Sentinel unchanged.** `net.*` adapters carry no forbidden capability; adding
+  any intrusive capability would be denied by the sentinel regardless.
+
+Organization egress policies (e.g. a filtering proxy returning 403) are honored,
+not bypassed: a blocked target surfaces as a failed recon step, never a retry
+storm.
+
 ## Operator responsibilities
 
 - Replace `EVE_ACTORS` dev tokens with real secrets; serve behind HTTPS.

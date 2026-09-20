@@ -32,11 +32,13 @@ class OperationIntent:
     goal: str
     targets: List[str]
     phases: List[Phase] = field(default_factory=list)
+    mode: str = "sim"  # "sim" (offline fixtures) or "live" (authorized online recon)
 
 
 class GoalInterpreter:
     def interpret(self, goal: str, targets: List[str],
-                  phases: List[str] | None = None) -> OperationIntent:
+                  phases: List[str] | None = None,
+                  mode: str = "sim") -> OperationIntent:
         if not targets:
             raise ValueError("at least one authorized target is required")
         if phases:
@@ -46,7 +48,8 @@ class GoalInterpreter:
         if Phase.POST_ASSESSMENT not in resolved:
             resolved.append(Phase.POST_ASSESSMENT)
         ordered = [p for p in DEFAULT_PHASES if p in resolved]
-        return OperationIntent(goal=goal, targets=list(targets), phases=ordered)
+        return OperationIntent(goal=goal, targets=list(targets), phases=ordered,
+                               mode=mode if mode in ("sim", "live") else "sim")
 
     def _infer_phases(self, goal: str) -> List[Phase]:
         g = goal.lower()

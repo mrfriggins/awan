@@ -21,6 +21,19 @@ _PHASE_PLAN = {
     Phase.POST_ASSESSMENT: [],
 }
 
+_LIVE_PHASE_PLAN = {
+    Phase.RECONNAISSANCE: [("net.recon", "asset_inventory"),
+                           ("net.recon", "service_discovery"),
+                           ("net.recon", "tech_identification")],
+    Phase.ENUMERATION: [("net.enum", "service_enum"),
+                        ("net.enum", "config_analysis")],
+    Phase.VULNERABILITY_ANALYSIS: [("net.vuln", "vuln_analysis")],
+    Phase.VALIDATION: [("net.validate", "validate_finding")],
+    Phase.POST_ASSESSMENT: [],
+}
+
+_TOOLSETS = {"sim": _PHASE_PLAN, "live": _LIVE_PHASE_PLAN}
+
 
 class OperationPlanner:
     def __init__(self, registry: ToolRegistry, max_retries: int = 2) -> None:
@@ -29,10 +42,11 @@ class OperationPlanner:
 
     def build(self, intent: OperationIntent) -> Plan:
         steps: List[PlannedStep] = []
+        toolset = _TOOLSETS.get(getattr(intent, "mode", "sim"), _PHASE_PLAN)
         for target in intent.targets:
             prev_phase_last: List[str] = []
             for phase in intent.phases:
-                specs = _PHASE_PLAN.get(phase, [])
+                specs = toolset.get(phase, [])
                 phase_ids: List[str] = []
                 for tool_id, action in specs:
                     sid = step_id()

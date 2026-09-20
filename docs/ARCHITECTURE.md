@@ -13,6 +13,8 @@ EVE EXECUTION CONTROLLER (eve/controller.py)
     ├── Approval Manager        eve/authz/approvals.py
     ├── Execution Scheduler     eve/execution/scheduler.py
     ├── Tool Adapter Registry   eve/tools/registry.py + eve/tools/adapter.py
+    │     ├── simulator toolset  eve/tools/simulator/  (offline fixtures)
+    │     └── live toolset       eve/tools/live/       (authorized online recon)
     ├── Result Analyzer         eve/analysis/analyzer.py
     ├── Adaptive Planner        eve/planning/adaptive.py
     ├── Verification Engine     eve/analysis/verify.py
