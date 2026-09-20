@@ -5,6 +5,7 @@ from typing import Dict, List
 
 from ..domain.enums import Confidence, StepState
 from ..domain.models import Finding, Plan
+from . import knowledge
 
 
 class VerificationEngine:
@@ -25,6 +26,8 @@ class VerificationEngine:
                 f.confidence = Confidence.CONFIRMED
             elif verdict == "FALSE_POSITIVE":
                 f.confidence = Confidence.FALSE_POSITIVE
+            if verdict:
+                f.risk_score = knowledge.risk_score(f.cvss, f.confidence)
 
     def confirmed(self, findings: List[Finding]) -> List[Finding]:
         return [f for f in findings if f.confidence == Confidence.CONFIRMED]

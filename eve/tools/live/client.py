@@ -107,6 +107,7 @@ class HttpResult:
     status: int = 0
     url: str = ""
     headers: Dict[str, str] = field(default_factory=dict)
+    cookies: List[str] = field(default_factory=list)
     body_snippet: str = ""
     error: Optional[str] = None
 
@@ -121,8 +122,9 @@ class SafeHttpClient:
         self._max_bytes = max_bytes
 
     def fetch(self, url: str, method: str = "GET") -> HttpResult:
-        if method not in ("GET", "HEAD"):
-            raise LiveNetworkError(f"method '{method}' not permitted (GET/HEAD only)")
+        if method not in ("GET", "HEAD", "OPTIONS"):
+            raise LiveNetworkError(
+                f"method '{method}' not permitted (GET/HEAD/OPTIONS only)")
         host, _ = normalize_target(url)
         guard_host(host)
         try:
@@ -131,11 +133,12 @@ class SafeHttpClient:
                               headers={"User-Agent": USER_AGENT},
                               trust_env=True) as client:
                 resp = client.request(method, url if "://" in url else "https://" + url)
-                body = "" if method == "HEAD" else resp.text[: self._max_bytes]
+                body = resp.text[: self._max_bytes] if method == "GET" else ""
+                cookies = resp.headers.get_list("set-cookie")
                 return HttpResult(ok=True, status=resp.status_code,
                                   url=str(resp.url),
                                   headers={k.lower(): v for k, v in resp.headers.items()},
-                                  body_snippet=body)
+                                  cookies=list(cookies), body_snippet=body)
         except LiveNetworkError:
             raise
         except Exception as exc:  # network failure, TLS, timeout

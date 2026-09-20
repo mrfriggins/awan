@@ -134,8 +134,14 @@ async function loadOp(id) {
   if (op.report) {
     $("report-card").hidden = false;
     const r = op.report;
-    $("d-report").innerHTML = `<p style="margin:0 0 8px">${escapeHtml(r.summary)}</p>
-      <div style="color:var(--muted);font-size:12px">Outcome: <strong>${escapeHtml(r.outcome)}</strong> · steps ${r.steps_succeeded}/${r.steps_total} ok · ${r.findings.length} reportable finding(s)</div>`;
+    const sev = r.severity_breakdown || {};
+    const sevLine = ["CRITICAL","HIGH","MEDIUM","LOW","INFO"]
+      .filter(k => sev[k]).map(k => `${k} ${sev[k]}`).join(" · ") || "none";
+    $("d-report").innerHTML = `<p style="margin:0 0 8px">${escapeHtml(r.executive_summary || r.summary)}</p>
+      <div style="color:var(--muted);font-size:12px">Outcome: <strong>${escapeHtml(r.outcome)}</strong> · risk ${r.risk_score}/10 · steps ${r.steps_succeeded}/${r.steps_total} ok · findings by severity: ${sevLine}</div>
+      <div style="margin-top:8px"><a href="/api/operations/${id}/report.md?dl=1" id="dl-report" class="ghost" style="text-decoration:none;display:inline-block">Download report (Markdown)</a></div>`;
+    const dl = $("dl-report");
+    if (dl) dl.onclick = (e) => { e.preventDefault(); downloadReport(id); };
   } else { $("report-card").hidden = true; }
   if (["SUCCEEDED","FAILED","CANCELLED","STOPPED"].includes(op.state) && poller) {
     clearInterval(poller); poller = null;
@@ -168,6 +174,19 @@ function startStream(id) {
     } catch (err) {}
   };
   evtSource.onerror = () => { /* auto-reconnects */ };
+}
+
+async function downloadReport(id) {
+  try {
+    const res = await fetch(`/api/operations/${id}/report.md`, { headers: headers() });
+    const text = await res.text();
+    const blob = new Blob([text], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `eve-report-${id}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (e) { alert("download failed: " + e.message); }
 }
 
 function statusDot(ok) { return `<span class="dot ${ok ? "ok" : "bad"}"></span>${ok ? "OK" : "—"}`; }

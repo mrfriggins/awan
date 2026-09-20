@@ -105,6 +105,7 @@ class VulnAdapter(ToolAdapter):
                                            f"{sig['max_version']} ({sig['cwe']}).",
                             "remediation": sig["remediation"],
                             "affected_components": [f"{product} {version}"],
+                            "check_id": "outdated_software",
                             "evidence_kind": ev.get("kind")})
             for flagged in data.get("flagged", []):
                 issue = fx.CONFIG_ISSUES.get(flagged)
@@ -118,7 +119,9 @@ class VulnAdapter(ToolAdapter):
                                        f"({issue['cwe']}).",
                         "remediation": issue["remediation"],
                         "affected_components": [data.get("service", "web")],
-                        "config_key": flagged})
+                        "config_key": flagged,
+                        "check_id": {"directory_listing": "directory_listing",
+                                     "server_tokens": "server_version_disclosure"}.get(flagged)})
         return AdapterResult(ok=True, output={"proposed": len(findings)},
                              findings=findings)
 

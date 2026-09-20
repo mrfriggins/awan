@@ -21,7 +21,8 @@ bearer token: `Authorization: Bearer <token>`. Roles: `viewer` (read),
 | POST | `/api/operations/{id}/approve` | approver | Approve a gated operation |
 | GET | `/api/operations/{id}/events` | any | Persisted audit events |
 | GET | `/api/operations/{id}/events/stream` | any* | SSE live event stream |
-| GET | `/api/operations/{id}/report` | any | Final structured report |
+| GET | `/api/operations/{id}/report` | any | Final structured report (scored: CWE/OWASP/CVSS/risk) |
+| GET | `/api/operations/{id}/report.md` | any | Report rendered as Markdown |
 | GET | `/api/operations/{id}/audit` | any | Verify the hash-chained audit log |
 | POST | `/api/emergency-stop` | operator | Engage the global kill switch |
 | POST | `/api/emergency-stop/reset` | operator | Reset the kill switch |

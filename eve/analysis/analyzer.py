@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 from ..clock import Clock, SystemClock
 from ..domain.enums import Confidence, Severity
+from . import knowledge
 from ..domain.models import Evidence, ExecutionResult, Finding, PlannedStep
 from ..evidence.manager import EvidenceManager
 from ..ids import result_id
@@ -32,17 +33,25 @@ class ResultAnalyzer:
 
         findings: List[Finding] = []
         for f in raw.findings:
+            knowledge.enrich(f)  # fill cwe/owasp/cvss/references (+severity if unset)
+            confidence = Confidence(f.get("confidence", "UNVERIFIED"))
+            cvss = float(f.get("cvss", 0.0))
             findings.append(Finding(
                 id=result_id().replace("res_", "fnd_"),
                 title=f.get("title", "Finding"),
                 target=f.get("target", step.target),
                 phase=step.phase,
                 severity=Severity(f.get("severity", "INFO")),
-                confidence=Confidence(f.get("confidence", "UNVERIFIED")),
+                confidence=confidence,
                 description=f.get("description", ""),
                 remediation=f.get("remediation", ""),
                 affected_components=f.get("affected_components", []),
+                cwe=f.get("cwe", ""), owasp=f.get("owasp", ""), cvss=cvss,
+                references=f.get("references", []),
+                risk_score=knowledge.risk_score(cvss, confidence),
                 evidence_ids=[e.id for e in stored_evidence],
                 meta={"config_key": f.get("config_key"),
+                      "check_id": f.get("check_id"),
+                      "path": f.get("path"),
                       "evidence_kind": f.get("evidence_kind")}))
         return result, stored_evidence, findings

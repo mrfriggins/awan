@@ -5,7 +5,7 @@ import json
 import threading
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from ..authz.actors import Actor
 from ..errors import ApprovalError, EveError
@@ -175,6 +175,19 @@ def get_report(operation_id: str, engine=Depends(get_engine),
     if snap.report is None:
         raise HTTPException(status_code=409, detail="report not yet available")
     return snap.report.model_dump(mode="json")
+
+
+@router.get("/operations/{operation_id}/report.md", response_class=PlainTextResponse)
+def get_report_markdown(operation_id: str, engine=Depends(get_engine),
+                        actor: Actor = Depends(current_actor)):
+    from ..reporting.reporter import render_markdown
+    try:
+        snap = engine.controller.get_snapshot(operation_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="operation not found")
+    if snap.report is None:
+        raise HTTPException(status_code=409, detail="report not yet available")
+    return render_markdown(snap.report)
 
 
 @router.get("/operations/{operation_id}/audit")

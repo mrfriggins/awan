@@ -41,9 +41,12 @@ guards by registering them.
 When `EVE_ALLOW_LIVE=true`, the `net.*` adapters may contact real targets, but
 only within these structural limits:
 
-- **Read-only recon only.** GET/HEAD, headers, `robots.txt`/`security.txt`, TLS
-  certificate + security-header inspection, DNS lookup. No port scanning, no
-  fuzzing, no exploitation, no credential/auth attempts.
+- **Read-only assessment only.** GET/HEAD/OPTIONS, security-header + cookie +
+  CORS analysis, dangerous-method detection (OPTIONS), TLS-certificate
+  inspection, DNS lookup, and a **bounded** read-only content-discovery list
+  (existence checks against a short fixed path list, flagged only on a real
+  sensitive-content signature). No port scanning, no fuzzing, no payload
+  injection, no exploitation, no credential/auth attempts, no DoS.
 - **Authorization still required.** A live target must have an explicit,
   unexpired scope grant; the deterministic gateway checks it every step.
 - **SSRF protection.** Hosts resolving to loopback/private/link-local/reserved/

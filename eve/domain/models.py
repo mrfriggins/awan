@@ -64,6 +64,11 @@ class Finding(BaseModel):
     evidence_ids: List[str] = Field(default_factory=list)
     remediation: str = ""
     affected_components: List[str] = Field(default_factory=list)
+    cwe: str = ""
+    owasp: str = ""
+    cvss: float = 0.0
+    references: List[str] = Field(default_factory=list)
+    risk_score: float = 0.0
     meta: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -91,6 +96,11 @@ class Report(BaseModel):
     steps_failed: int
     adaptations: int
     outcome: str
+    executive_summary: str = ""
+    severity_breakdown: Dict[str, int] = Field(default_factory=dict)
+    risk_score: float = 0.0
+    owasp_coverage: List[str] = Field(default_factory=list)
+    methodology: List[str] = Field(default_factory=list)
 
 
 class OperationSnapshot(BaseModel):

@@ -30,8 +30,14 @@ Sentinel, and can be halted instantly by an out-of-model emergency stop.
   survive restarts (a STOPPED operation is never auto-restarted).
 - **Hash-chained audit log** — tamper-evident event history in Postgres, with
   secret redaction on every record.
-- **Structured reports** — findings tied to assets, with honest confidence
-  (nothing is "confirmed" without a non-destructive validation step).
+- **Professional assessment depth** — a broad non-destructive check suite
+  (security headers, cookie flags, CORS, dangerous HTTP methods, TLS/cert,
+  sensitive-path exposure, email-auth DNS), each mapped to **CWE / OWASP Top-10
+  / CVSS** with a confidence-weighted **risk score**.
+- **Structured reports** — executive summary, severity breakdown, OWASP
+  coverage, methodology, per-finding CWE/CVSS/remediation/references, plus a
+  **Markdown export** (`/report.md`). Nothing is "confirmed" without a
+  non-destructive validation step.
 - **Operations console** — a mobile-friendly web UI with live event streaming
   and a prominent emergency-stop control.
 
@@ -111,7 +117,7 @@ before exposing it anywhere.
 
 ```bash
 pip install -r requirements.txt
-python -m pytest            # 70 tests, no external services required
+python -m pytest            # 80 tests, no external services required
 ```
 
 ## Documentation
