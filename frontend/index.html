@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EVE Operations Console</title>
+<meta name="description" content="EVE Offensive Execution Engine — authorized-lab security operations console." />
+<link rel="stylesheet" href="/app/styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <h1>EVE&nbsp;·&nbsp;Operations</h1>
+    <span class="sub">Offensive Execution Engine — authorized lab</span>
+  </div>
+  <button id="estop" class="estop" aria-pressed="false"
+          title="Halt every running operation immediately">EMERGENCY STOP</button>
+</header>
+<main>
+  <p class="notice" role="note">Offline simulator over explicitly authorized lab
+    fixtures. Every step is gated by deterministic authorization and the MIRA
+    Sentinel; no real hosts are ever contacted.</p>
+  <div class="card" id="auth-card">
+    <h2>Session</h2>
+    <label for="token">Bearer token</label>
+    <div class="row">
+      <input id="token" type="password" autocomplete="off"
+             placeholder="operator-token" value="operator-token" />
+      <button class="ghost" id="save-token">Use</button>
+    </div>
+    <p class="empty" id="whoami">Not connected.</p>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>New operation</h2>
+        <label for="goal">Objective</label>
+        <textarea id="goal" placeholder="Run a full assessment of the lab web host">Run a full assessment of the lab web host</textarea>
+        <label for="targets">Authorized targets (comma-separated)</label>
+        <input id="targets" value="lab-web-01" />
+        <label for="mode">Mode</label>
+        <select id="mode">
+          <option value="sim">Simulator (offline lab fixtures)</option>
+          <option value="live">Live (authorized online recon — needs EVE_ALLOW_LIVE)</option>
+        </select>
+        <div class="checkbox">
+          <input type="checkbox" id="require-approval" />
+          <label for="require-approval" style="margin:0">Require human approval before execution</label>
+        </div>
+        <button class="primary" id="create">Create &amp; run operation</button>
+      </div>
+      <div class="card">
+        <h2>Operations</h2>
+        <ul id="op-list"><li class="empty">No operations yet.</li></ul>
+      </div>
+    </div>
+    <div>
+      <div class="card" id="detail" hidden>
+        <h2>Current objective</h2>
+        <p id="d-goal" style="font-weight:600;margin:0 0 4px"></p>
+        <p id="d-sub" style="color:var(--muted);font-size:12px;margin:0 0 12px"></p>
+        <div class="statgrid">
+          <div class="stat"><div class="k">State</div><div class="v"><span id="d-state" class="badge">—</span></div></div>
+          <div class="stat"><div class="k">Progress</div><div class="v" id="d-progress">0/0</div></div>
+          <div class="stat"><div class="k">Adaptations</div><div class="v" id="d-adapt">0</div></div>
+          <div class="stat"><div class="k">Findings</div><div class="v" id="d-findings">0</div></div>
+        </div>
+        <div class="statgrid" style="margin-top:8px">
+          <div class="stat"><div class="k">Authorization</div><div class="v" id="d-authz" style="font-size:13px">—</div></div>
+          <div class="stat"><div class="k">Sentinel</div><div class="v" id="d-sentinel" style="font-size:13px">—</div></div>
+          <div class="stat" style="grid-column: span 2"><div class="k">Current step</div><div class="v" id="d-step" style="font-size:13px">—</div></div>
+        </div>
+        <div class="controls">
+          <button class="ghost" id="btn-approve" hidden>Approve</button>
+          <button class="ghost" id="btn-pause">Pause</button>
+          <button class="ghost" id="btn-resume">Resume</button>
+          <button class="ghost" id="btn-cancel">Cancel</button>
+        </div>
+      </div>
+      <div class="card" id="scope-card" hidden>
+        <h2>Target scope</h2>
+        <div id="d-scope" style="color:var(--muted);font-size:13px"></div>
+      </div>
+      <div class="card" id="findings-card" hidden>
+        <h2>Findings</h2>
+        <ul id="d-finding-list"><li class="empty">None yet.</li></ul>
+      </div>
+      <div class="card" id="steps-card" hidden>
+        <h2>Plan &amp; steps</h2>
+        <ul class="steps" id="d-steps"></ul>
+      </div>
+      <div class="card" id="events-card" hidden>
+        <h2>Live events</h2>
+        <ul class="events" id="d-events"></ul>
+      </div>
+      <div class="card" id="report-card" hidden>
+        <h2>Final report</h2>
+        <div id="d-report"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="foot">
+  EVE Offensive Execution Engine · authorized security testing only ·
+  &copy; <span id="year"></span> EVE Project
+</footer>
+<script src="/app/app.js"></script>
+</body>
+</html>

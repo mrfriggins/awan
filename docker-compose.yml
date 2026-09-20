@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: eve
+      POSTGRES_PASSWORD: eve
+      POSTGRES_DB: eve
+    ports: ["5432:5432"]
+    volumes: ["eve-db:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eve"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  eve:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      EVE_DATABASE_URL: postgresql+psycopg2://eve:eve@db:5432/eve
+      EVE_REDIS_URL: redis://redis:6379/0
+      EVE_SENTINEL_FAIL_CLOSED: "true"
+      # Production deployments MUST override EVE_ACTORS with real tokens.
+      EVE_ACTORS: "op-REPLACE-ME:operator:operator,ap-REPLACE-ME:approver:operator|approver"
+    ports: ["8000:8000"]
+
+volumes:
+  eve-db:

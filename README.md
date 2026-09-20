@@ -1,0 +1,150 @@
+# EVE — Offensive Execution Engine
+
+An autonomous, **authorized-lab** security-operations executor. EVE runs a full
+assessment loop — **UNDERSTAND → PLAN → VALIDATE → AUTHORIZE → EXECUTE → OBSERVE
+→ ANALYZE → ADAPT → VERIFY → REPORT** — over a registry of tools, while every
+action is gated by deterministic (non-LLM) authorization and a fail-closed MIRA
+Sentinel, and can be halted instantly by an out-of-model emergency stop.
+
+> **Safety model.** This build ships **offline simulator tools only**. Adapters
+> read static lab fixtures; there is **no network access, no shell, and no real
+> exploitation**. The engine is designed for teaching, framework development, and
+> assessment orchestration in explicitly authorized labs. Real tools can be added
+> later behind the same adapter interface — and they remain subject to the same
+> authorization, sentinel, approval, and emergency-stop guards, which the model
+> cannot bypass or disable.
+
+## Highlights
+
+- **Bounded autonomous loop** — hard limits on steps, retries, duration, and
+  adaptations. The model can never create an infinite loop.
+- **Deterministic authorization** — a backend gateway checks actor + scope +
+  expiry before every step. The LLM's claim of authorization is never trusted.
+- **MIRA Sentinel** — an independent guard that denies destructive/forbidden
+  capabilities and **fails closed** if it can't render a decision.
+- **Emergency stop** — a global kill switch, independent of the model, that
+  halts every running operation immediately.
+- **Adaptive planning** — when a step returns something unexpected, EVE injects
+  new steps, but only for **already-authorized targets** (scope never expands).
+- **Persistent state machine** — 11 states, validated transitions, operations
+  survive restarts (a STOPPED operation is never auto-restarted).
+- **Hash-chained audit log** — tamper-evident event history in Postgres, with
+  secret redaction on every record.
+- **Professional assessment depth** — a broad non-destructive check suite
+  (security headers, cookie flags, CORS, dangerous HTTP methods, TLS/cert,
+  sensitive-path exposure, email-auth DNS), each mapped to **CWE / OWASP Top-10
+  / CVSS** with a confidence-weighted **risk score**.
+- **Structured reports** — executive summary, severity breakdown, OWASP
+  coverage, methodology, per-finding CWE/CVSS/remediation/references, plus a
+  **Markdown export** (`/report.md`). Nothing is "confirmed" without a
+  non-destructive validation step.
+- **Operations console** — a mobile-friendly web UI with live event streaming
+  and a prominent emergency-stop control.
+
+## Quick start (zero external services)
+
+```bash
+pip install -r requirements.txt
+python -m eve                       # serves on http://localhost:8000
+```
+
+Open `http://localhost:8000/` for the Operations console. The default dev tokens
+are `operator-token`, `approver-token`, `viewer-token` (override in production
+via `EVE_ACTORS`).
+
+### Drive it from the API
+
+```bash
+BASE=http://localhost:8000
+OP="Authorization: Bearer operator-token"
+
+# 1. Authorize a lab target for the operator (deterministic scope grant)
+curl -s -X POST $BASE/api/authorizations -H "$OP" -H 'Content-Type: application/json' \
+  -d '{"actor":"operator","target":"lab-web-01"}'
+
+# 2. Create an operation (autoruns by default)
+curl -s -X POST $BASE/api/operations -H "$OP" -H 'Content-Type: application/json' \
+  -d '{"goal":"run a full assessment","targets":["lab-web-01"]}'
+
+# 3. Fetch status / report / audit
+curl -s $BASE/api/operations/<op_id> -H "$OP"
+curl -s $BASE/api/operations/<op_id>/report -H "$OP"
+curl -s $BASE/api/operations/<op_id>/audit -H "$OP"
+```
+
+## Live (online) mode
+
+By default EVE runs the **offline simulator**. To run **authorized, non-destructive
+online reconnaissance** against real targets:
+
+```bash
+export EVE_ALLOW_LIVE=true            # opt in (off by default)
+# For internal/lab hosts that resolve to private IPs, also:
+# export EVE_LIVE_ALLOW_PRIVATE=true
+# Optional belt-and-suspenders allowlist:
+# export EVE_LIVE_ALLOWED_HOSTS="scanme.example,lab.internal"
+python -m eve
+```
+
+Then create an operation with `"mode": "live"` and a real target you are
+authorized to assess:
+
+```bash
+curl -s -X POST $BASE/api/authorizations -H "$OP" -H 'Content-Type: application/json' \
+  -d '{"actor":"operator","target":"scanme.example"}'
+curl -s -X POST $BASE/api/operations -H "$OP" -H 'Content-Type: application/json' \
+  -d '{"goal":"full assessment","targets":["scanme.example"],"mode":"live"}'
+```
+
+**Live mode is read-only recon:** DNS resolution, HTTP(S) `GET`/`HEAD`, header and
+`robots.txt`/`security.txt` retrieval, security-header + TLS-certificate
+inspection, and version-banner analysis. It does **not** scan ports, fuzz,
+exploit, or attempt authentication — and it never contacts a target without an
+explicit authorization grant. Requests that resolve to loopback/private/
+link-local/cloud-metadata addresses are refused unless `EVE_LIVE_ALLOW_PRIVATE`
+is set. See [`docs/SECURITY.md`](docs/SECURITY.md).
+
+## Run with Postgres + Redis
+
+```bash
+docker compose up --build
+```
+
+This starts Postgres, Redis, and EVE. **Override `EVE_ACTORS`** with real tokens
+before exposing it anywhere.
+
+## Tests
+
+```bash
+pip install -r requirements.txt
+python -m pytest            # 80 tests, no external services required
+```
+
+## Documentation
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components and the loop.
+- [`docs/API.md`](docs/API.md) — endpoint reference.
+- [`docs/USAGE.md`](docs/USAGE.md) — workflows, configuration, extending tools.
+- [`docs/SECURITY.md`](docs/SECURITY.md) — the safety model and boundaries.
+
+## Configuration
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `EVE_DATABASE_URL` | `sqlite:///./eve.db` | SQLAlchemy URL (Postgres-ready) |
+| `EVE_REDIS_URL` | _(unset)_ | Optional cross-process event fan-out |
+| `EVE_SENTINEL_FAIL_CLOSED` | `true` | Deny when the sentinel is unavailable |
+| `EVE_AUTORUN` | `true` | Auto-run a queued operation in the background |
+| `EVE_ACTORS` | dev tokens | `token:actor:role1\|role2,...` |
+| `EVE_ALLOW_LIVE` | `false` | Enable **live/online** recon adapters |
+| `EVE_LIVE_ALLOW_PRIVATE` | `false` | Permit private/internal IPs (internal labs) |
+| `EVE_LIVE_ALLOWED_HOSTS` | _(unset)_ | Comma-separated host allowlist for live mode |
+| `EVE_LIVE_TIMEOUT` / `EVE_LIVE_MAX_BYTES` | `10` / `262144` | Per-request bounds |
+| `EVE_MAX_STEPS` | `64` | Loop bound: max steps |
+| `EVE_MAX_RETRIES` | `2` | Loop bound: retries per step |
+| `EVE_MAX_DURATION_SECONDS` | `900` | Loop bound: wall-clock |
+| `EVE_MAX_ADAPTATIONS` | `8` | Loop bound: replans |
+
+## License
+
+MIT (see `LICENSE`).
